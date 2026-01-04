@@ -1,9 +1,14 @@
-setwd("C:/Users/meirong/Desktop/PhD project/second preference/final.table/third/1.calculate the result/")
+library(RColorBrewer)
+library(colorspace)
+library(emmeans)
+library(MuMIn)
+library(marginaleffects)
+library(lmerTest)
+library(rcompanion)
+library(dplyr)
 metadata<-read.csv("metadata.final2.csv",row.names = 1)
-setwd("C:/Users/meirong/Desktop/PhD project/second preference/final.table/organised code/table/")
 fungi<-read.csv("table.nolichenandhost.csv",row.names = 1)
 fungi<-as.data.frame(t(fungi))
-setwd("C:/Users/meirong/Desktop/PhD project/second preference/final.table/organised code/1.phi")
 r <- read.csv("all.r2.tax.csv", row.names = 1)
 r2 <- r[r$p.value < 0.05, ]
 ###
@@ -35,7 +40,6 @@ all.try<-merge(all2_long,all2_fre,by=c("site","OTU"),all=T)
 all.try<-all.try[all.try$Ratio>0,]
 all.try<-all.try[all.try$frequency>0,]
 ###merging the lifestyle
-setwd("C:/Users/meirong/Desktop/PhD project/second preference/final.table/forth/7.living type")
 trait<-read.csv("FungalTraits.csv")
 tax<-read.csv("taxonomy.final.csv")
 tax$GENUS<-gsub(".*__","",tax$genus)
@@ -66,12 +70,9 @@ try[is.na(try$sign),]$sign<-FALSE
 all2 <- try %>%
   arrange(primary_lifestyle, OTU,site) %>%
   mutate(qseqid_ordered = factor(OTU, levels = unique(OTU)))
-
 all2 <- all2 %>%
   mutate(color_group = ifelse(sign, primary_lifestyle, "non-indicator"))
 
-library(RColorBrewer)
-library(colorspace)
 colors <- c(
   colorRampPalette(brewer.pal(9, "Set1"))(9),
   colorRampPalette(brewer.pal(12, "Set3"))(12),
@@ -79,39 +80,21 @@ colors <- c(
 names(colors)<-c( unique(all2$site.x))
 all3<-all2[!is.na(all2$stat),]
 ####
-library(emmeans)
-library(MuMIn)
-library(marginaleffects)
-library(lmerTest)
 all2[!all2$color_group %in% "non-indicator",]$color_group <- 'indicator'
 all2[all2$color_group %in% "non-indicator",]$color_group <- 'non_indicator'
-model <- lmer(frequency ~ BestHost + (1|site), data = all2)
-###calculate the OTU +- SD
-aaaa <- all2 %>%
- group_by(BestHost,site) %>%
-  summarise(fre=mean(frequency))
-
-aaaa <- aaaa %>%
-  group_by(BestHost) %>%
-  summarise(frequency=mean(fre),sd=sd(fre))
-###
+model <- lmer(frequency ~ BestHost + (1|site), data = all2) ##compare the substrate range of fungal species at particular substrate
 b<-avg_comparisons(model, variables = list(BestHost = "pairwise")) 
-setwd("C:/Users/meirong/Desktop/PhD project/second preference/final.table/organised code/6.lifestyle distribution")
 performance::performance(model)
 fre.substrate<-parameters::model_parameters(model)
 write.csv(fre.substrate,"fre.substrate.parameters.csv")
-library(rcompanion)
-library(dplyr)
 letter<-cldList(p.value~contrast,threshold = 0.05,data=b)
 letter$Group[letter$Group == "fruitbody"] <- "fruit body"
 letter$Group[letter$Group == "leaflitter"] <- "leaf litter"
 difference <- all2 %>%
   group_by(BestHost) %>%
   summarise(max=mean(frequency))
-
 y.site<-merge(letter,difference,by.x="Group",by.y="BestHost")
 y.site<-data.frame(BestHost=factor(y.site$Group),ymax=y.site$max,letter=y.site$Letter)
-
 plot_predictions(model,condition = c("BestHost"))+
   labs(x="substrate",y="frequency")+
   theme_light() +
@@ -131,12 +114,10 @@ substrate_range<- a %>%
   summarise(min.s=min(frequency), max.s=max(frequency))
 write.csv(substrate_range,"substrate_range.csv")
 ###
-model <- lm(frequency ~ BestHost  +  site, data = a)
+model <- lm(frequency ~ BestHost  +  site, data = a)##compare the substrate range of indicator species at particular substrate
 performance::performance(model)
 fre.substrate<-parameters::model_parameters(model)
 write.csv(fre.substrate,"fre.indi.substrate.parameters.csv")
-
-###
 b<-avg_comparisons(model, variables = list(BestHost  = "pairwise")) 
 letter<-cldList(p.value~contrast,threshold = 0.05,data=b)
 letter$Group[letter$Group == "fruitbody"] <- "fruit body"
@@ -161,7 +142,6 @@ theme_light() +
     axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1),
     legend.position = "bottom")+
   geom_text(data = y.site, aes(x = BestHost  , y = ymax, label = letter,hjust=-0.5))
-
 ###indicator compare
 data<-all3
 data$sign<-ifelse(data$sign,'indicator','non-indicator')
@@ -185,16 +165,6 @@ for (i in unique(all2$BestHost)) {
   
   result<-rbind(result,c)
 }
-
-min(result$nonindicator.meann/result$indicator.mean)
-max(result$nonindicator.meann/result$indicator.mean)
-performance::performance(model)
-##
-model <- lmerTest::lmer(frequency ~ Ratio + BestHost + (1|site), data = aaa)
-fre.ratio<-parameters::model_parameters(model)
-performance::performance(model)
-write.csv(fre.ratio,"frequency.abundance.parameter.csv")
-
 ###
 indicator.rs<-aaa[!is.na(aaa$sign),]
 indicator.rs<-indicator.rs[(indicator.rs$sign),]
@@ -207,26 +177,21 @@ aaaa.p <- r %>%
   group_by(BestHost) %>%
   summarise(fre=mean(stat),sd=sd(stat))
 
-###
+###compare the association strength among substrates
 indicator.all<-r[r$p.value<0.05,]
 model <- lm(stat ~ BestHost, data = indicator.all)
 b<-avg_comparisons(model, variables = list(BestHost = "pairwise")) 
 fre.ratio<-parameters::model_parameters(model)
 performance::performance(model)
 write.csv(fre.ratio,"stat.substrate.parameter.csv")
-
-library(rcompanion)
-library(dplyr)
 letter<-cldList(p.value~contrast,threshold = 0.05,data=b)
 letter$Group[letter$Group == "fruitbody"] <- "fruit body"
 letter$Group[letter$Group == "leaflitter"] <- "leaf litter"
 difference <- indicator.all %>%
   group_by(BestHost) %>%
   summarise(max=mean(stat))
-
 y.site<-merge(letter,difference,by.x="Group",by.y="BestHost")
 y.site<-data.frame(substrate=factor(y.site$Group),ymax=y.site$max,letter=y.site$Letter)
-
 plot_predictions(model,condition = c("BestHost"))+
   labs(x="substrate",y="preference strength")+
   scale_x_discrete(limits = c("leaves","moss","snow","leaf litter",
@@ -238,5 +203,6 @@ plot_predictions(model,condition = c("BestHost"))+
     axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1),
     legend.position = "bottom")+
   geom_text(data = y.site, aes(x = substrate , y = ymax, label = letter,hjust=-0.5))
+
 
 
