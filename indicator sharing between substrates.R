@@ -2,15 +2,15 @@ library(ggalluvial)
 library(ggplot2)
 library(dplyr)
 library(ggforce)
-setwd("C:/Users/meirong/Desktop/PhD project/second preference/final.table/organised code/1.phi")
+library(tidyverse)
+library(tidyr)
+library(igraph)
+library(ggraph)
+library(tidygraph)
 r <- read.csv("all.r2.tax.csv", row.names = 1)
 r2 <- r[r$p.value < 0.05, ]
-library(dplyr)
-library(tidyverse)
 ##
-setwd("C:/Users/meirong/Desktop/PhD project/second preference/final.table/third/1.calculate the result/")
 metadata<-read.csv("metadata.final2.csv",row.names = 1)
-setwd("C:/Users/meirong/Desktop/PhD project/second preference/final.table/organised code/table")
 fungi<-read.csv("table.nolichenandhost.csv",row.names = 1)
 table<-as.data.frame(t(fungi))
 table2<-table
@@ -37,36 +37,18 @@ try3 <- table_long[table_long$OTU %in% indicator$OTU,] ##the indicators go into 
 indicator$group<-"indicator"
 try<-merge(indicator,try3,by=c("OTU","substrate"),all=T)
 try[is.na(try$group),]$group<-"nonindicator"
-#try3 <- aggregate(try3$relative.sum,by=list(substrate=try3$substrate,OTU=try3$OTU),sum)
-####
-setwd("C:/Users/meirong/Desktop/PhD project/second preference/final.table/organised code/10.indicator exchange")
 write.csv(try,"indicator.among. substrates.csv")
 write.csv(try2,"indicator.in.substrates.csv")
-####
-library(dplyr)
-library(tidyr)
-library(igraph)
-library(ggraph)
-library(tidygraph)
-
-### ----------------------------------------------------
-### 1. Sample data (REPLACE with your df)
-### ----------------------------------------------------
+### 1. Sample data
 df <- try
-###
 sankey<-try
 sankey$relative.sum<-ifelse(sankey$relative.sum>0,1,0)
-### ----------------------------------------------------
 ### 2. Define indicator OTUs for each substrate
-### Replace with your own indicator-OTU list if needed
-### ----------------------------------------------------
 indicator_list <- df %>% 
   group_by(substrate) %>%
   summarise(indicators = list(unique(OTU)))
 indicator_df <- try2[,1:2]
-### ----------------------------------------------------
 ### 3. Build indicator-flow edges
-### ----------------------------------------------------
 flow_edges <- data.frame()
 
 substrates <- sort(unique(df$substrate))
@@ -106,7 +88,7 @@ for (A in substrates) {
     }
   }
 }
-###consistent indicators
+###
 df2<-df[duplicated(df$OTU),]
 df3<-df[!df$OTU %in% unique(df2$OTU), ]
 consistency<-df3
@@ -114,7 +96,6 @@ consistency$relative.sum<-ifelse(consistency$relative.sum>0,1,0)
 consistency <- consistency %>%
   group_by(substrate) %>%
   summarise(weight=sum(relative.sum))
-
 consistency2 <- data.frame(from= consistency$substrate, to= consistency$substrate, weight= consistency $weight)
 flow_edges <- rbind(
   flow_edges,consistency2)
@@ -144,7 +125,6 @@ colors <- setNames(colors, c("topsoil", "subsoil",
 
 # Ensure self flows are TRUE/FALSE
 df_sankey2$self <- as.logical(df_sankey2$self)
-
 # For ordering on axes: move self flows to last
 df_sankey2$flow_color <- factor(
   ifelse(df_sankey2$source == df_sankey2$target, "self", "indicator"),
@@ -188,7 +168,7 @@ flow_edges2<-flow_edges[flow_edges$from!=flow_edges$to,]
 flow_edges2<-flow_edges2 %>%
   group_by(to) %>%
   summarise(weight2=sum(weight))
-###get the biggest sources
+###
 flow_edges2<-flow_edges[flow_edges$from!=flow_edges$to,]
 flow_edges2<-flow_edges2 %>%
   group_by(from) %>%
@@ -214,3 +194,4 @@ inflow<-flow_edges2 %>%
   summarise(inflow=sum(weight))
 all<-merge(inflow,outflow,by.x="to",by.y = "from")
 all$ratio<-all$outflow/all$inflow
+
