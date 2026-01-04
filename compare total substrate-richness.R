@@ -1,9 +1,8 @@
 ##compare total richness
 library(dplyr)
-setwd("C:/Users/meirong/Desktop/PhD project/second preference/final.table/organised code/")
-setwd("C:/Users/meirong/Desktop/PhD project/second preference/final.table/third/1.calculate the result/")
+library(lmerTest)
+library(marginaleffects)
 metadata<-read.csv("metadata.final2.csv",row.names = 1)
-setwd("C:/Users/meirong/Desktop/PhD project/second preference/final.table/organised code/table/")
 fungi<-read.csv("table.nolichenandhost.csv",row.names = 1)
 fungi<-as.data.frame(t(fungi))
 fungi$sample_names<-row.names(fungi)
@@ -14,8 +13,6 @@ richness2 <- table %>%
   group_by(substrate, site) %>%
   select(substrate, site, richness)
 ##
-library(lmerTest)
-library(marginaleffects)
 model <- lm(richness ~  substrate + site, data = richness2)
 ###
 b<-avg_comparisons(model, variables = list(substrate = "pairwise")) 
@@ -46,3 +43,4 @@ plot_predictions(model,condition = c("substrate"))+
     legend.position = "bottom")+
   geom_text(data = y.site, aes(x = substrate , y = ymax, label = letter,hjust=-0.5))
 write.csv(substrate.richness,"total.richnessparameter.csv")
+
