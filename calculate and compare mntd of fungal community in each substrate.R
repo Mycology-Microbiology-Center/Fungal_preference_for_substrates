@@ -4,18 +4,18 @@ library(tidyverse)
 library(ggplot2)
 library(ranger)
 library(shapviz)
+library(rcompanion)
+library(marginaleffects)
+library(lme4)
 ###
-setwd("C:/Users/meirong/Desktop/PhD project/second preference/final.table/third/1.calculate the result/")
 metadata<-read.csv("metadata.final2.csv",row.names = 1)
-setwd("C:/Users/meirong/Desktop/PhD project/second preference/final.table/organised code/table/")
 fungi<-read.csv("table.nolichenandhost.csv",row.names = 1)
 fungi<-as.data.frame(t(fungi))
-tax<-read.csv("C:/Users/meirong/Desktop/PhD project/second preference/final.table/third/2.Unifrac/tax.final.csv",header = T,row.names = 1)
+tax<-read.csv("tax.final.csv",header = T,row.names = 1)
 tax<-tax[tax$qseqid %in% names(fungi),]
 write.csv(tax[,2:6],"fungi.csv")
 fungi$sample_names<-row.names(fungi)
 ###
-setwd("C:/Users/meirong/Desktop/PhD project/second preference/final.table/organised code/5.regression(richness and distance)/")
 fungi.tree<-read.tree("fungi.tree.txt")
 ###
 rename.tr<-function(tree){
@@ -52,12 +52,11 @@ rename.tr<-function(tree){
 fungi.tree<-rename.tr(fungi.tree)
 fungi.distance<-cophenetic(fungi.tree)
 ##table
-tax<-read.csv("C:/Users/meirong/Desktop/PhD project/second preference/final.table/third/2.Unifrac/tax.final.csv",header = T,row.names = 1)
+tax<-read.csv("tax.final.csv",header = T,row.names = 1)
 table<-fungi[,-ncol(fungi)]
 table<-as.data.frame(t(table))
 table$OTU<-row.names(table)
 ###indicator
-setwd("C:/Users/meirong/Desktop/PhD project/second preference/final.table/organised code/1.phi/")
 r <- read.csv("fungi2.r2.tax.csv", row.names = 1)
 r <- r[r$p.value < 0.05, ]
 indicator.table<-table[row.names(table) %in% r$OTU,]
@@ -125,9 +124,8 @@ LW.indicator<-t(LW.indicator)
 LW.indicator<-LW.indicator[,colnames(LW.indicator.distance)]
 LW.indicator.ses<-ses.mpd((LW.indicator), LW.indicator.distance,null.model ="richness")
 #regression between richness and mpd
-setwd("C:/Users/meirong/Desktop/PhD project/second preference/final.table/organised code/2.richness")
 richness<-read.csv("richness.csv" ,header = T,row.names = 1,sep = ",")
-metadata<-read.csv("C:/Users/meirong/Desktop/PhD project/second preference/final.table/third/1.calculate the result/metadata.final2.csv",row.names = 1)
+metadata<-read.csv("metadata.final2.csv",row.names = 1)
 metadata2<-metadata[match(richness$sample,metadata$sample_names),]
 ses<-rbind(LW.ses,LV.ses,LZ.ses)
 ses$sample<-row.names(ses)
@@ -140,14 +138,8 @@ ses.indicator$sample<-row.names(ses.indicator)
 try.indicator<-merge(metadata,ses.indicator[,c(2,6,7,9)],by.x = "sample_names",by.y = "sample",all=T)
 try.indicator<-try.indicator[!is.na(try.indicator$mpd.obs),]
 ##
-library(dplyr)
-library(marginaleffects)
-library(lme4)
 names(try)[7]<-"richness"
 try2<-try
-library(rcompanion)
-library(dplyr)
-library(marginaleffects)
 try2$substrate<-factor(try2$substrate,levels=c("subsoil","topsoil","wood","feces","fruit body",
                                                "lichen","moss","bark","leaves","leaf litter",
                                                "snow"))
@@ -155,7 +147,6 @@ mod01<-lmerTest::lmer(mpd.obs.z ~ substrate+(1|site2),data = try2)
 b<-avg_comparisons(mod01, variables = list(substrate = "pairwise")) 
 performance::performance(mod01)
 substrate.ses<-parameters::model_parameters(mod01)
-setwd("C:/Users/meirong/Desktop/PhD project/second preference/final.table/organised code/5.regression(richness and distance)")
 write.csv(substrate.ses,"substrate.ses.parameter.csv")
 letter<-cldList(p.value~contrast,threshold = 0.05,data=b)
 letter$Group[letter$Group == "fruitbody"] <- "fruit body"
@@ -189,7 +180,6 @@ performance::performance(mod01)
 substrate.obs<-parameters::model_parameters(mod01)
 write.csv(substrate.obs,"substrate.obs.parameter.csv")
 b<-avg_comparisons(mod01, variables = list(substrate = "pairwise")) 
-library(rcompanion)
 letter<-cldList(p.value~contrast,threshold = 0.05,data=b)
 letter$Group[letter$Group == "fruitbody"] <- "fruit body"
 letter$Group[letter$Group == "leaflitter"] <- "leaf litter"
@@ -274,7 +264,6 @@ try$type<-"whole"
 try.indicator$type<-"indicator"
 all.s<-rbind(try, try.indicator)
 ##
-
 fungi_overlap <- bind_rows(try, try.indicator)
 fungi_overlap$substrate <- factor(
   fungi_overlap$substrate,
@@ -316,4 +305,5 @@ out <- ggplot(fungi_overlap, aes(x = substrate, y = mpd.obs.z,color=type)) +
   )
 
 out
+
 
