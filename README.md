@@ -1,2 +1,2 @@
-**Fungi-substrate association patterns in boreal forests**
-This repository contains the code and resources used for analyzing the impact of sampling design on soil animal, bacterial, and fungal diversity estimates based on PacBio and Illumina amplicon sequencing. This repository eexplores the influences of sampling designs including sampling depth, sampling area, and sample size on the biodiversity estimation using individual samples, DNA and soil pooling samples.
+#Fungi-substrate association patterns in boreal forests
+This repository contains the code and resources used for analyzing fungal biodiversity, assembly and dissimilarity in community composition across substrates  based on PacBio. This repository explores the influences of fungal-specific selection and dispersal process on fungal biodiversity in substrates.
