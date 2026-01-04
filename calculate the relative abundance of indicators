@@ -1,8 +1,9 @@
 library(adegenet)
 library(tidyverse)
-setwd("C:/Users/meirong/Desktop/PhD project/second preference/final.table/third/1.calculate the result/")
+library(ggplot2)
+library(rcompanion)
+library(marginaleffects)
 metadata<-read.csv("metadata.final2.csv",row.names = 1)
-setwd("C:/Users/meirong/Desktop/PhD project/second preference/final.table/organised code/table/")
 fungi<-read.csv("table.nolichenandhost.csv",row.names = 1)
 table<-as.data.frame(t(fungi))
 table2<-table
@@ -36,7 +37,6 @@ proportion_long <- proportion %>%
   # summarise(reads.sum=sum(reads))  %>%
   filter(reads>0)
 #######indicator
-setwd("C:/Users/meirong/Desktop/PhD project/second preference/final.table/organised code/1.phi")
 r <- read.csv("fungi2.r2.tax.csv", row.names = 1)
 r <- r[r$p.value < 0.05, ]
 ###calculateing the relative abundance of all indicators
@@ -96,10 +96,8 @@ indicator.r2 <- indicator.r2 %>%
 ###
 indicator.r3<-all
 indicator.r3$ratio<-indicator.r3$indicator.reads/indicator.r3$reads
-library(marginaleffects)
 model <- lm(ratio ~ substrate + site2, data = indicator.r3)
 b<-avg_comparisons(model, variables = list(substrate = "pairwise")) 
-library(rcompanion)
 letter<-cldList(p.value~contrast,threshold = 0.05,data=b)
 letter$Group[letter$Group == "fruitbody"] <- "fruit body"
 letter$Group[letter$Group == "leaflitter"] <- "leaf litter"
@@ -109,7 +107,6 @@ difference <- indicator.r %>%
 
 y.site<-merge(letter,difference,by.x="Group",by.y="substrate")
 y.site<-data.frame(substrate=factor(y.site$Group),ymax=y.site$max,letter=y.site$Letter)
-library(ggplot2)
 plot_predictions(model,condition = c("substrate"))+
   labs(x="substrate",y="relative abundance")+
   theme_light() +
@@ -127,7 +124,6 @@ performance::performance(model)
 # names(indicator.r)[2]<-"site"
 try<-merge(indicator.p[,c(3,4)],indicator.r3[,c(1:3,8)],by="sample_names")
 names(try)[2]<-"indicator.reads"
-setwd("C:/Users/meirong/Desktop/PhD project/second preference/final.table/organised code/table/")
 fungi<-read.csv("table.nolichenandhost.csv",row.names = 1)
 fungi<-as.data.frame(t(fungi))
 r<-hill(fungi, q = 0, raref = 0, runs = 999)
@@ -139,13 +135,12 @@ names(r2)[2]<-'richness'
 try<-merge(try, r2[,1:2],by="sample_names")
 mod<-lm(ratio ~ richness + substrate + site2,data=try) ##relative abundance and richness
 mod3<-lm(indicator.reads ~ richness + substrate + site2,data=try)##indicator number and richness
-
 relative<-parameters::parameters(mod)
 performance::performance(mod)
 write.csv(relative,"indicator.relative.abundance and richness.parameters.csv")
-
 number<-parameters::parameters(mod3)
 performance::performance(mod3)
 write.csv(number,"indicator.number.and.richness.parameters.csv")
+
 
 
