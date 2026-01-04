@@ -2,9 +2,9 @@ library(adegenet)
 library(tidyverse)
 library(gridExtra)
 library(dplyr)
-setwd("C:/Users/meirong/Desktop/PhD project/second preference/final.table/third/1.calculate the result/")
+library(ComplexHeatmap)
+library(circlize)
 metadata<-read.csv("metadata.final2.csv",row.names = 1)
-setwd("C:/Users/meirong/Desktop/PhD project/second preference/final.table/organised code/table/")
 fungi<-read.csv("table.nolichenandhost.csv",row.names = 1)
 table<-as.data.frame(t(fungi))
 table2<-table
@@ -17,7 +17,6 @@ table3 <- table2 %>%
   select(-group_sum)
 table4 <- aggregate(table3[,2:(ncol(table3)-2)],by=list(substrate=table3$substrate,site=table3$site2),mean)
 table3 <- aggregate(table4[,3:(ncol(table4))],by=list(substrate=table4$substrate),mean)
-
 table<-table[rowSums(table)>0,]
 metadata <- metadata[match(row.names(table),metadata$sample_names),]
 ###
@@ -43,11 +42,10 @@ table_long <- table3 %>%
   rownames_to_column(var = "substrate") %>%
   pivot_longer(cols = where(is.numeric), names_to = "OTU", values_to = "Ratio")%>%
   filter(Ratio>0)
-##
 table42 <- table4 %>%
   pivot_longer(cols = where(is.numeric), names_to = "OTU", values_to = "Ratio")%>%
   filter(Ratio>0)
-###use the mean relative abundance of OTUs as the baseline to show the key OTUs changing in relative abundance
+###
 ge<-merge(tax[,c(1,7)],table_long,by.x="qseqid",by.y="OTU")
 try<-ge
 try$genus[(try$genus=="")]<-"g__unclassified"
@@ -60,9 +58,7 @@ try2 <- try2 %>%
   group_by(substrate) %>%
   mutate(across(where(is.numeric), ~ rank(desc(.), ties.method = "first")))
 try2<-try2[try2$Ratio %in% c(1:10),]
-
 try[!try$genus %in% try2$genus,]$genus<-"other"
-
 try<- try %>%
   group_by(substrate,genus) %>%
   summarise(Ratio=sum(Ratio))
@@ -72,8 +68,6 @@ heat_mat <- try %>%
   pivot_wider(names_from = substrate, values_from = Ratio, values_fill = 0) %>%
   column_to_rownames("genus") %>%
   as.matrix()
-library(ComplexHeatmap)
-library(circlize)
 ht1<-Heatmap(heat_mat, name = "Ratio",
         cluster_rows = T,
         cluster_columns = TRUE, 
@@ -86,7 +80,7 @@ table_long2<-table_long2[!is.na(table_long2$Ratio),]
 table_long2$GENUS[is.na(table_long2$GENUS)]<-"unknown"
 table_long2$primary_lifestyle[is.na(table_long2$primary_lifestyle)]<-"unknown"
 try<-table_long2
-##calculate the consistence of dominant lifestyle
+##
 table422<-merge(table42,table,by.x="OTU",by.y="qseqid",all=T)
 table422<-table422[!is.na(table422$Ratio),]
 table422$GENUS[is.na(table422$GENUS)]<-"unknown"
@@ -97,7 +91,6 @@ consistence <- table422 %>%
 consistence <- consistence %>%
   group_by(substrate,site) %>%
   mutate(all=sum(Ratio))
-
 consistence$percentage<- consistence$Ratio/consistence$all
 consistence<-consistence[!consistence$primary_lifestyle %in% "unknown",]
 consistence2 <- consistence %>%
@@ -126,14 +119,4 @@ p1 <- grid.grabExpr(draw(ht1, newpage = FALSE))
 p2 <- grid.grabExpr(draw(ht2, newpage = FALSE))
 
 grid.arrange(p1, p2, ncol = 2)
-###
-unique(table_long2$GENUS)
-a<- table_long2 %>%
-  group_by(GENUS) %>%
-  summarise(Ratio=length(unique(substrate))/11)
-n<-table_long2[table_long2$GENUS %in% a$GENUS[order(a$Ratio)[1:10]],]
 
-a<- try %>%
-  group_by(primary_lifestyle) %>%
-  summarise(Ratio=length(unique(substrate))/11)
-n<-try[try$primary_lifestyle %in% a$primary_lifestyle[order(a$Ratio)[1:10]],]
