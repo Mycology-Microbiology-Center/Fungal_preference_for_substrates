@@ -1,6 +1,10 @@
-setwd("C:/Users/meirong/Desktop/PhD project/second preference/final.table/third/1.calculate the result/")
+library(pairwiseAdonis)
+library(ape)
+library(metagMisc)
+library(RColorBrewer)
+library(ggplot2)
+library(reshape2)
 metadata<-read.csv("metadata.final2.csv",row.names = 1)
-setwd("C:/Users/meirong/Desktop/PhD project/second preference/final.table/organised code/table")
 fungi<-read.csv("table.nolichenandhost.csv",row.names = 1)
 fungi<-as.data.frame(t(fungi))
 fungi$sample_names<-row.names(fungi)
@@ -65,9 +69,6 @@ fungi.d<- simpson_abund(fungi)
 row.names(metadata)<-metadata$sample_names
 metadata3<-metadata[attr(fungi.d,"Labels"),]
 ####
-library(pairwiseAdonis)
-library(ape)
-library(metagMisc)
 permanova_result <- adonis2(fungi.d ~ substrate,strata = metadata3$site2, data = metadata3,permutations = 999)
 pairwise_results <- pairwise.adonis(fungi.d,factors = metadata3$substrate, perm = 999, p.adjust.m = "fdr")
 substrate_shapes <- c("feces" = 15,"leaves" = 7,  "snow" = 8,  "fruit body" = 18,
@@ -91,7 +92,7 @@ out1<-ggplot(aaa, aes(x = Axis.1, y = Axis.2, )) +
     panel.grid = element_blank(),
     legend.position = "right"
   )
-library(RColorBrewer)
+
 colors<-c("#882233","#E691C9", "#EDBB00","#E31864",
           "#0005A4", "#99999D", "#0FF001" , "#B35EEE", "#009666",
           "#996677","#00CCFF")
@@ -126,7 +127,6 @@ fungi.d2$value <- 1-fungi.d2$value
 fungi.d2<-aggregate(fungi.d2$value, by=list(substrate.x=fungi.d2$substrate.x, substrate.y=fungi.d2$substrate.y,site=fungi.d2$site2.x), data = fungi.d2, FUN = mean, na.rm = TRUE)
 fungi.d2<-aggregate(x ~ substrate.x + substrate.y, data = fungi.d2, FUN = mean, na.rm = TRUE)
 ##
-library(reshape2)
 names(fungi.d2)<-c("row","col","value")
 samples <- sort(unique(c(fungi.d2$row, fungi.d2$col)))
 similarity_matrix <- matrix(NA, nrow = length(samples), ncol = length(samples),
@@ -159,7 +159,7 @@ h<-Heatmap(similarity_matrix, name = "Ratio",
           grid.text(txt, x, y, gp = gpar(fontsize = 7))
         })
 
-setwd("C:/Users/meirong/Desktop/PhD project/second preference/final.table/organised code/7.dissimilarity across substrates")
 write.csv(pairwise_results,"pairwise_results.csv")
 write.csv(permanova_result,"permanova_result.csv")
 write.csv(fungi.d2,"mean.similarity.result.across.site.csv")
+
