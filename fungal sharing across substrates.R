@@ -1,4 +1,11 @@
 library(lme4)
+library(ComplexHeatmap)
+library(circlize)
+library(reshape2)
+library(tidyr)
+library(dplyr)
+library(tibble)
+library(purrr)
 load("phi.separate.sites.RData")
 LZ.r2$site <- "LZ"
 LV.r2$site <- "LV"
@@ -7,7 +14,6 @@ all<-rbind(LZ.r2,LW.r2,LV.r2)
 non.indicator<-all[!all$p.value<0.05,]
 all<- all[all$p.value<0.05,]
 switch<- all[all$OTU %in% unique(all$OTU[duplicated(all$OTU)]),]
-library(dplyr)
 switch <- switch %>%
   add_count(OTU, BestHost) %>%   
   filter(n == 1) %>%             
@@ -43,10 +49,6 @@ non.ind4 <- non.i.d2[non.i.d2$OTU %in% unique(non.ind2$OTU),]#get the indicator 
 #####select the unstable consistent
 switch3<-select(switch2,c("OTU", "BestHost", 'site','stat'))
 switch2<-select(switch2,c("OTU", "BestHost", 'site'))
-library(tidyr)
-library(dplyr)
-library(tibble)
-library(purrr)
 switch2$BestHost<-paste0(switch2$BestHost,switch2$site)
 switch_new <- switch2 %>%
   group_by(OTU) %>%
@@ -144,9 +146,6 @@ switch_new<-rbind(switch_new2,consistence_new2,tnon.ind_new2)
 switch_new <- switch_new %>%
   group_by(from, to) %>%
   summarise(number.c=mean(number.c))
-library(ComplexHeatmap)
-library(circlize)
-library(reshape2)
 samples <- sort(unique(c(switch_new$from, switch_new$to)))
 similarity_matrix <- matrix(NA, nrow = length(samples), ncol = length(samples),
                             dimnames = list(samples, samples))
@@ -216,3 +215,4 @@ result<-try %>%
             s=mean(number.s),all=mean(number.a),
             is=mean(is.r),sd=mean(sd.r),
             sd.m=mean(number.sd),is.m=mean(number.is))
+
