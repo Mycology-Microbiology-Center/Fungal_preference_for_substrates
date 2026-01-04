@@ -1,5 +1,5 @@
 library(lme4)
-load("C:/Users/meirong/Desktop/PhD project/second preference/final.table/organised code/1.phi/phi.separate.sites.RData")
+load("phi.separate.sites.RData")
 LZ.r2$site <- "LZ"
 LV.r2$site <- "LV"
 LW.r2$site <- "LW"
@@ -216,65 +216,3 @@ result<-try %>%
             s=mean(number.s),all=mean(number.a),
             is=mean(is.r),sd=mean(sd.r),
             sd.m=mean(number.sd),is.m=mean(number.is))
-#####frequency
-setwd("C:/Users/meirong/Desktop/PhD project/second preference/final.table/third/1.calculate the result/")
-metadata<-read.csv("metadata.final2.csv",row.names = 1)
-setwd("C:/Users/meirong/Desktop/PhD project/second preference/final.table/organised code/table/")
-fungi<-read.csv("table.nolichenandhost.csv",row.names = 1)
-fungi<-as.data.frame(t(fungi))
-###
-fungi$sample_names<-row.names(fungi)
-fungi2<-merge(fungi,metadata,by="sample_names",all=T)
-row.names(fungi2)<-fungi2$sample_names
-fungi2<-fungi2[,-1]
-fungi2<-fungi2[!is.na(fungi2$ff04207f066a2b2769b796c7e8da74227ea12fe4),]
-all2<-aggregate(fungi2[,1:(ncol(fungi2)-2)],by=list(substrate=fungi2$substrate,site=fungi2$site2),sum)
-library(dplyr)
-all <- all2 %>%
-  group_by(site) %>%
-  mutate(site_total = sum(across(where(is.numeric), sum))) %>%  # total per site
-  mutate(across(where(is.numeric), ~ . / site_total)) %>%
-  select(-site_total)  # remove temporary column
-##calculate the frequency
-fre <- all %>%
-  group_by(site) %>%
-  summarise(across(where(is.numeric), ~ sum(. > 0)))
-##
-library(tidyverse)
-all2_long <- all %>%
-  pivot_longer(cols = where(is.numeric), names_to = "OTU", values_to = "Ratio")
-
-all2_fre <- fre %>%
-  pivot_longer(cols = where(is.numeric), names_to = "OTU", values_to = "frequency")
-
-all2_long$me<-paste0(all2_long$site,all2_long$OTU)
-all2_fre$me<-paste0(all2_fre$site,all2_fre$OTU)
-all.try<-merge(all2_long,all2_fre,by="me",all=T)
-all.try<-all.try[all.try$Ratio>0,]
-all.try<-all.try[all.try$frequency>0,]
-all.try<-all.try[,c(2:5,8)]
-names(all.try)[2:3]<-c("site", "OTU")
-###
-consistence2<-consistence3
-names(consistence2)[2]<-"substrate"
-consistence2$type<-"consistant"
-
-switch2<-switch3
-names(switch2)[2]<-"substrate"
-switch2$type<-"switching"
-
-type<-rbind(consistence2,switch2)
-me<-function(x,y){
-  a<-merge(x,y,by=c("substrate","site","OTU"),all=T)
-  return(a)
-}
-try<-list(type,all.try)
-try<-Reduce(me,try)
-try<-try[!is.na(try$type),]
-library(marginaleffects)
-try<-try[!is.na(try$frequency),]
-model <- lmer(frequency ~ substrate + type +(1|site), data = try)
-b<-avg_comparisons(model, variables = list(type = "pairwise")) 
-
-model <- lm(stat ~ substrate + type +site, data = try)
-b<-avg_comparisons(model, variables = list(type = "pairwise")) 
