@@ -1,6 +1,13 @@
-setwd("C:/Users/meirong/Desktop/PhD project/second preference/final.table/third/1.calculate the result")
+library(metagMisc)
+library(plyr)
+library(doFuture)
+library(data.table)
+library(indicspecies)
+library(plyr)
+library(data.table)
+library(ggplot2)
 metadata<-read.csv("metadata.final2.csv",row.names = 1)
-table<-read.csv("C:/Users/meirong/Desktop/PhD project/second preference/final.table/organised code/table/table.nolichenandhost.csv",row.names = 1)
+table<-read.csv("table.nolichenandhost.csv",row.names = 1)
 fungi.ind<-table
 fungi.ind<- ifelse(fungi.ind>0,1,0)
 fungi.ind<-as.data.frame(t(fungi.ind))
@@ -42,11 +49,6 @@ calc_phi <- function(x, perm = 10000){
   
   return(res)
 }
-
-library(plyr)
-library(doFuture)
-library(data.table)
-library(indicspecies)
 registerDoFuture()
 plan(multisession, workers = 4)      # for RStudio
 options(future.globals.maxSize = 5e9)  # 5GB; default = 500 * 1024 ^ 2 = 500 MiB
@@ -62,9 +64,8 @@ LW.PIRES <- llply(.data = LW.ind, .fun = function(x){
 }, .parallel = TRUE)
 ##indicators
 ##using phi to analysis
-load("C:/Users/meirong/Desktop/PhD project/second preference/final.table/organised code/1.phi/phi.separate.sites.RData")
+load("phi.separate.sites.RData")
 ###extract phi
-library(metagMisc)
 extract<-function(fungi2.PIRES,fungi2){
   
   ## Extract indvals
@@ -160,7 +161,6 @@ extract<-function(fungi2.PIRES,fungi2){
                  get_stats_by_cluster(x$III, alpha = 1, indvalcomp = TRUE)
                })
   
-  library(ggplot2)
   x <- fungi2
   occ <- data.table(Sp = colnames(x)[-ncol(x)], Occ = colSums(x[, -ncol(x)]))
   r <- IIIs[[1]]
@@ -199,15 +199,13 @@ extract<-function(fungi2.PIRES,fungi2){
   return(list(p,p2,r))  
   
 }
-library(plyr)
-library(data.table)
+
 LW.result<-extract(LW.PIRES,LW)
 LZ.result<-extract(LZ.PIRES,LZ)
 LV.result<-extract(LV.PIRES,LV)
 LV.result[[1]]
 LV.result[[2]]
 ##growth forms
-setwd("C:/Users/meirong/Desktop/PhD project/second preference/final.table/third/")
 tax<-read.csv("tax.final.csv",row.names = 1)
 tax$Phylum[is.na(tax$Phylum)]<-"p__unclassified"
 tax$Class[is.na(tax$Class)]<-"c__unclassified"
@@ -220,7 +218,6 @@ tax2$Genus<-gsub(".*_","",tax2$Genus)
 ##
 r2<-merge(LZ.result[[3]],tax2,by.x="OTU",by.y="qseqid",all=T)
 fungi2.r2<-r2[!is.na(r2$BestHost),]
-setwd("C:/Users/meirong/Desktop/PhD project/second preference/final.table/organised code/1.phi/")
 LZ.r2<-fungi2.r2
 LZ.r<-fungi2.r2[fungi2.r2$p.value<0.05,]
 write.csv(LZ.r,"LZ.r2.tax.csv")
@@ -238,4 +235,5 @@ fungi2.r2<-r2[!is.na(r2$BestHost),]
 LV.r2<-fungi2.r2
 LV.r<-fungi2.r2[fungi2.r2$p.value<0.05,]
 write.csv(LV.r,"LV.r2.tax.csv")
+
 
