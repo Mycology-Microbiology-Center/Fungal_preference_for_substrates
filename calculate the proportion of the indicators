@@ -1,9 +1,6 @@
-setwd("C:/Users/meirong/Desktop/PhD project/second preference/final.table/third/1.calculate the result/")
 metadata<-read.csv("metadata.final2.csv",row.names = 1)
-setwd("C:/Users/meirong/Desktop/PhD project/second preference/final.table/organised code/table/")
 fungi<-read.csv("table.nolichenandhost.csv",row.names = 1)
 fungi<-as.data.frame(t(fungi))
-setwd("C:/Users/meirong/Desktop/PhD project/second preference/final.table/organised code/1.phi")
 r <- read.csv("all.r2.tax.csv", row.names = 1)
 r2 <- r[r$p.value < 0.05, ]
 ###
@@ -22,3 +19,4 @@ indicator<-r2 %>%
 indicator$BestHost<-gsub("\\.", " ", indicator$BestHost)
 all<-merge(richness,indicator,by="BestHost")
 all$ratio<-all$number/all$richness
+
