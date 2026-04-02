@@ -2,9 +2,7 @@ library(adegenet)
 library(tidyverse)
 library(gridExtra)
 library(dplyr)
-setwd("C:/Users/meirong/Desktop/PhD project/second preference/final.table/third/1.calculate the result/")
 metadata<-read.csv("metadata.final2.csv",row.names = 1)
-setwd("C:/Users/meirong/Desktop/PhD project/second preference/final.table/organised code/table/")
 fungi<-read.csv("table.nolichenandhost.csv",row.names = 1)
 ###
 table<-as.data.frame(t(fungi))
@@ -36,7 +34,6 @@ table<-table[rowSums(table)>0,]
 metadata <- metadata[match(row.names(table),metadata$sample_names),]
 ###
 fungi<-table
-setwd("C:/Users/meirong/Desktop/PhD project/second preference/final.table/forth/7.living type")
 trait<-read.csv("FungalTraits.csv")
 tax<-read.csv("taxonomy.final.csv")
 tax$GENUS<-gsub(".*__","",tax$genus)
