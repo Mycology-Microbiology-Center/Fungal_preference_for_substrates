@@ -1,0 +1,81 @@
+#select for the soil data
+f.fungi<-read.csv("fungi_normal.csv",row.names = 1)
+f.fungi<-f.fungi[,-c(332,333)]
+metadata<-read.csv("metadata.final2.csv",row.names = 1)
+f.fungi<-f.fungi[,grepl(paste0(metadata$sample_names,collapse = "|"),names(f.fungi))]
+library(data.table)
+table<-read.csv("fungi.substrate.csv",row.names=1)
+table$OTU<-row.names(table)
+f.fungi$OTU<-row.names(f.fungi)
+table2<-merge(table,f.fungi,by="OTU",all=T)
+table2[is.na(table2)]<-0
+row.names(table2)<-table2$OTU
+table2<-table2[-1]
+table2<-table2[rowSums(table2)!=0,]
+#rarefy
+tax<-read.csv("taxonomy.final.csv",header = T,row.names = 1)
+row.names(metadata)<-metadata$sample_names
+row.names(tax)<-tax$qseqid
+fungi2<-table2
+fungi2$qseqid<-row.names(fungi2)
+tax2<-merge(tax,fungi2,by="qseqid",all=T)
+##table filtering
+  tax2<-tax2[tax2$pident>85,]
+  tax2 <- tax2[tax2$evalue < 1e-20, ]
+  tax2<-tax2[tax2$qcovs>90,]
+  fungi2<-tax2[grepl("k__Fungi",tax2$stitle),]
+fungi2<-fungi2[!is.na(fungi2$TUE127696),]
+fungi2<-fungi2[,c(1,19:ncol(fungi2))]
+tax2<-tax2[,1:2]
+row.names(tax2)<-tax2$qseqid
+row.names(fungi2)<-fungi2$qseqid
+fungi2<-fungi2[,-1]
+table2<-fungi2
+table3<-table2[,colSums(table2)>=960]
+table3<-table3[rowSums(table3)!=0,]
+library(metagMisc)
+library(phyloseq)
+table3<-table3[,!names(table3) %in% names(sort(colSums(table3[,metadata[paste0(metadata$substrate,metadata$site2)=="topsoilLV",]$sample_names])))[c(1:(length(names(sort(colSums(table3[,metadata[paste0(metadata$substrate,metadata$site2)=="topsoilLV",]$sample_names]))))-15))]]
+table3<-table3[,!names(table3) %in% names(sort(colSums(table3[,metadata[paste0(metadata$substrate,metadata$site2)=="topsoilLZ",]$sample_names])))[c(1:(length(names(sort(colSums(table3[,metadata[paste0(metadata$substrate,metadata$site2)=="topsoilLZ",]$sample_names]))))-15))]]
+table3<-table3[,!names(table3) %in% names(sort(colSums(table3[,metadata[paste0(metadata$substrate,metadata$site2)=="topsoilLW",]$sample_names])))[c(1:(length(names(sort(colSums(table3[,metadata[paste0(metadata$substrate,metadata$site2)=="topsoilLW",]$sample_names]))))-15))]]
+
+metadata2<-metadata[match(names(table3),metadata$sample_names),]
+row.names(metadata2)<-metadata2$sample_names
+tax3<-tax2[match(row.names(table3),tax2$qseqid),]
+
+fungi <- phyloseq(
+  otu_table = otu_table(as.matrix(table3), taxa_are_rows = TRUE),
+  tax_table = tax_table(as.matrix(tax3)),
+  sample_data = sample_data(metadata2)
+)
+min<-979
+d2 <- fungi
+fungirarefy<-phyloseq_mult_raref(d2,trimOTUs = F, replace = T, MinSizeThreshold = min, SampSize = min, iter = 1000,multithread=T,seeds = NULL)
+fungirarefy1<-fungirarefy[c(1:500)]
+fungirarefy12<-fungirarefy1[c(1:250)]
+fungirarefy11<-fungirarefy1[c(251:500)]
+fungirarefy2<-fungirarefy[c(501:1000)]
+fungirarefy22<-fungirarefy2[c(1:250)]
+fungirarefy21<-fungirarefy2[c(251:500)]
+rarefyresult1<-list()
+for (i in 1:250) {
+  rarefyresult1[[i]]<-estimate_richness(fungirarefy11[[i]], measures = c("Observed","Shannon"))
+}
+rarefyresult2<-list()
+for (i in 1:250) {
+  rarefyresult2[[i]]<-estimate_richness(fungirarefy12[[i]], measures = c("Observed","Shannon"))
+}
+rarefyresult3<-list()
+for (i in 1:250) {
+  rarefyresult3[[i]]<-estimate_richness(fungirarefy21[[i]], measures = c("Observed","Shannon"))
+}
+rarefyresult4<-list()
+for (i in 1:250) {
+  rarefyresult4[[i]]<-estimate_richness(fungirarefy22[[i]], measures = c("Observed","Shannon"))
+}
+rarefyresult<-c(rarefyresult4,rarefyresult3,rarefyresult2,rarefyresult1)
+write.table(rarefyresult,"rarefy.diversity.allsamples.csv",sep=",")
+#get the rarefy table
+table1<-as.data.frame(fungirarefy12[["240"]]@otu_table)
+write.csv(table1,"all.rarefy.table.csv")
+##after gettting a rarefied table, we removed the host reads from the fruiting body samples and the lichens manually. 
