@@ -104,6 +104,13 @@ write.csv(table,"table.remove.host.csv")
 ######
 row.names(table) <- table$OTU
 table <- table[,-1]
+###alpha diversity of raw table
+library(vegan)
+ttable<-as.data.frame(t(table))
+richness1<-data.frame(richness=rowSums((ttable)>0), sample_names= row.names(ttable), reads=rowSums(ttable))
+hill <- data.frame(shannon=exp(diversity(ttable, index = "shannon")),sample_names= names(exp(diversity(ttable, index = "shannon"))))
+r.diversity<-merge(hill, richness1, by="sample_names")
+write.csv(r.diversity,"diversity.of.raw.table.csv")
 ####after filtering out the host reads, some lichen or fruiting body samples have quite low sequencing depths
 #### so separate them from rarefaction
 table2 <- table [, colSums(table) > 976]
