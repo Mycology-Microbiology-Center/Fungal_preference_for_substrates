@@ -2415,7 +2415,7 @@ try2<-try
 try2$substrate<-factor(try2$substrate,levels=c("subsoil","topsoil","wood","fruit body","feces",
                                                "lichen","moss","bark","leaves","leaf litter",
                                                "snow"))
-mod01<-lmerTest::lmer(mpd.obs.z2 ~ substrate+(1|site2),data = try2)
+mod01<-lmer(mpd.obs.z2 ~ substrate+(1|site2),data = try2)
 b<-avg_comparisons(mod01, variables = list(substrate = "pairwise")) 
 performance::performance(mod01)
 substrate.ses<-parameters::model_parameters(mod01)
@@ -2445,7 +2445,7 @@ plot_predictions(mod01,condition = c("substrate"))+
   geom_text(data = y.site, aes(x = substrate , y = ymax, label = letter,hjust=-0.5))
 
 ###
-mod01<-lmerTest::lmer(mpd.obs2 ~ substrate+(1|site2),data = try2)
+mod01<-lmer(mpd.obs2 ~ substrate+(1|site2),data = try2)
 performance::performance(mod01)
 substrate.obs<-parameters::model_parameters(mod01)
 write.csv(substrate.obs,"substrate.obs.parameter.csv")
