@@ -320,6 +320,30 @@ for(i in 1:250){
 }
 save.image("phi.table.RData")
 ##################### individual richness and Hill number (q = 1)
+fruit.lichen$OTU <- row.names(fruit.lichen)
+prep_data <- function(x){
+  lapply(x, function(obj){
+    a <- as.data.frame(t(as.matrix(obj)))
+    a$OTU <- row.names(a)
+    
+    fungi.ind <- merge(a, fruit.lichen, by = "OTU", all = TRUE)
+    fungi.ind[is.na(fungi.ind)] <- 0
+    
+    row.names(fungi.ind) <- fungi.ind$OTU
+    fungi.ind <- fungi.ind[, -1]
+    fungi.ind <- as.data.frame(t(fungi.ind))
+    fungi.ind <- fungi.ind[, colSums(fungi.ind > 0) > 2]
+    fungi.ind <- fungi.ind[rowSums(fungi.ind > 0) > 0,]
+    fungi.ind <- Matrix::Matrix(as.matrix(fungi.ind), sparse = TRUE)
+    
+    return(fungi.ind)
+  })
+}
+table12 <- prep_data(table1)
+table22 <- prep_data(table2)
+table32 <- prep_data(table3)
+table42 <- prep_data(table4)
+save.image("tableall.RData")
 richness1<-list()
 hill1<-list()
 for (i in 1:250) {
@@ -423,30 +447,7 @@ plot_predictions(model,condition = c("substrate"))+
   geom_text(data = y.site, aes(x = substrate , y = ymax, label = letter,hjust=-0.5))
 write.csv(substrate.richness,"individual.richnessparameter.csv")
 ######compare total substrate richness
-fruit.lichen$OTU <- row.names(fruit.lichen)
-prep_data <- function(x){
-  lapply(x, function(obj){
-    a <- as.data.frame(t(as.matrix(obj)))
-    a$OTU <- row.names(a)
-    
-    fungi.ind <- merge(a, fruit.lichen, by = "OTU", all = TRUE)
-    fungi.ind[is.na(fungi.ind)] <- 0
-    
-    row.names(fungi.ind) <- fungi.ind$OTU
-    fungi.ind <- fungi.ind[, -1]
-    fungi.ind <- as.data.frame(t(fungi.ind))
-    fungi.ind <- fungi.ind[, colSums(fungi.ind > 0) > 2]
-    fungi.ind <- fungi.ind[rowSums(fungi.ind > 0) > 0,]
-    fungi.ind <- Matrix::Matrix(as.matrix(fungi.ind), sparse = TRUE)
-    
-    return(fungi.ind)
-  })
-}
-table12 <- prep_data(table1)
-table22 <- prep_data(table2)
-table32 <- prep_data(table3)
-table42 <- prep_data(table4)
-save.image("tableall.RData")
+load("tableall.RData")
 total_richness_calculation<- function(fungi){
   fungi$sample_names<-row.names(fungi)
   metadata2 <- metadata[match(fungi$sample_names, metadata$sample_names), ]
